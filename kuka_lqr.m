@@ -1,9 +1,10 @@
 % 16-714 Advanced Control for Robotics
 % extra credit
 % Yutong Huang
-clc;clear;close all;
+clc;clear;
+close all;
 
-%% init
+%% Initialization
 global robot;
 robot = loadrobot('kinovaGen3','DataFormat','row','Gravity',[0 0 -9.81]);
 
@@ -18,14 +19,14 @@ xT = ik(endEffector,taskFinal,[1 1 1 1 1 1],x0(1,:));
 xT = mod(xT,2*pi);
 xT = [xT;zeros(1,7)];
 
-
-%% Joint space control (lqr)
 Tmax = 5;
 dt = 0.05; 
 A = [1 dt; 0 1];
-B = [0; 1];
-Q = [1 0; 0 1];
+B = [0; dt];
+Q = [3 0; 0 1];
 R = 1;
+
+%% Joint space control (lqr)
 figure(1); clf; axis([-0.7 0.7 -0.7 0.7 -0.1 1.5]);
 show(robot,x0(1,:),'PreservePlot',true,'Frames','off');
 axis([-0.7 0.7 -0.7 0.7 -0.1 1.5]);
@@ -43,24 +44,43 @@ for k = 1:length(ulist)
     xlist(:,:,k+1) = f(xlist(:,:,k),ulist(:,k)');
 end 
 
+%% visualize
 clist = zeros(length(tform2trvec(taskInit)),length(tlist)); 
 clist(:,1) = tform2trvec(taskInit)';
-
-%% visualize
+visualize_arm = 0;
 for k = 2:length(tlist)
     x = xlist(1,:,k);
-    pause(dt);
-    show(robot,x,'PreservePlot',true,'Frames','off');
-    axis([-0.7 0.7 -0.7 0.7 -0.1 1.5]);
+    if visualize_arm
+        pause(dt);
+        show(robot,x,'PreservePlot',true,'Frames','off');
+        axis([-0.7 0.7 -0.7 0.7 -0.1 1.5]);
+    end
     clist(:,k) = tform2trvec(getTransform(robot,x,endEffector))';
 end
+show(robot,x,'PreservePlot',true,'Frames','off');
+axis([-0.7 0.7 -0.7 0.7 -0.1 1.5]);
 hold on;
 plot3(clist(1,:),clist(2,:),clist(3,:),'k','LineWidth',2);
 axis([-0.7 0.7 -0.7 0.7 -0.1 1.5]);
 
 %% plot control tarj
 figure(2);
-for i = 1:7
-    plot(2:length(tlist), ulist(i,:)); hold on;
-end
+subplot(3,1,1)
+plot(2:length(tlist), ulist,'LineWidth',2);
+% legend(["joint1" "joint2" "joint3" "joint4" "joint5" ...
+%         "joint6" "joint7"])
+title("control")
+xlim([0 100])
+subplot(3,1,2)
+plist = reshape(xlist(1,:,:), size(xlist,2), size(xlist,3));
+plot(1:length(tlist), plist,'LineWidth',2);
+title("joint position")
+xlim([0 100])
+subplot(3,1,3)
+vlist = reshape(xlist(2,:,:), size(xlist,2), size(xlist,3));
+plot(1:length(tlist), vlist,'LineWidth',2); 
+title("joint volecity")
+xlim([0 100])
 
+%% save the tarj
+save('ref_traj.mat', 'xlist');
