@@ -35,3 +35,6 @@ The `.m` codes are available in `/scripts`.
 ### 1.6 (MRAC_inprogress.m)
 - the system was able to reach the goal, but the learned parameter is not converged for all joints.
 - some the joint was able to converge faster than the others.
+- The approch I did was to update the extended A and B (stacked the joints together)
+  - X would be [x1 x2 ... x7 v1 v2 ... v7]'
+-should I update each joint separately?
