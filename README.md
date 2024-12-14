@@ -30,3 +30,8 @@ The `.m` codes are available in `/scripts`.
 - **W** is the covariance of Gaussian white noise acting on the dynamics, affecting reliability.
 - **V** is the covariance of Gaussian white noise acting on the measurement.
   - Larger **V** or **W** makes the system trajectory more random and less accurate in following the original LQR trajectory.
+
+
+### 1.6 (MRAC_inprogress.m)
+- the system was able to reach the goal, but the learned parameter is not converged for all joints.
+- some the joint was able to converge faster than the others.

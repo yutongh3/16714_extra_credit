@@ -20,8 +20,10 @@ dt = 0.05;
 
 nx = 14; % 7 pos + 7 vel
 nu = 7;
-A = 0.8*[eye(7), dt*eye(7); zeros(7), eye(7)];
-B = 0.8*[zeros(7), dt*eye(7)]';
+factor1 = 0.9;
+factor2 = 0.8;
+A = [eye(7), factor1*dt*eye(7); zeros(7), eye(7)];
+B = [zeros(7), factor2*dt*eye(7)]';
 
 A_ref = [eye(7), dt*eye(7); zeros(7), eye(7)];
 B_ref = [zeros(7), dt*eye(7)]';
@@ -50,7 +52,7 @@ x_ref_list(:,1) = x_ref;
 C = [A, B];
 F = 0.01 * eye(nx+nu);
 %%
-% Nsteps = 31;
+% Nsteps = 32;
 ulist = zeros(size(u(x0, K_star),1), Nsteps);
 elist = zeros(nx, Nsteps+1);
 Clist = zeros(nx, nx+nu, Nsteps+1);
@@ -74,7 +76,8 @@ for k = 1:Nsteps
     update_term = e * (phi' * F);
     C = C + update_term;
 
-    x = A_est*x_ref + B_est*u_curr;
+    x = A_est*x + B_est*u_curr;
+    % x = (A_est - B_est*K)*x;
 
     x_ref = A_ref*x_ref + B_ref*u_curr;
 
@@ -83,34 +86,40 @@ for k = 1:Nsteps
     x_ref_list(:,k+1) = x_ref;
     ulist(:,k+1) = u_curr;
     elist(:,k+1) = e;
-    a_matrix = C(:, 1:nx);
-    a = mean(diag(a_matrix));
-    b_matrix = C(:,nu+1:end);
-    b = mean(diag(b_matrix));
-    A_est = [a*eye(nu),b*eye(nu);zeros(nu),a*eye(nu)];
-    B_est = [zeros(7), b*eye(7)]';
+    a_matrix = C(:,nu+1:end);
+    a_array = diag(a_matrix);
+    b_array = a_array(nu+1:end);
+    a_array = a_array(1:nu);
+    A_est = [eye(nu),diag(a_array);zeros(nu),eye(nu)];
+    B_est = [zeros(7), diag(b_array)]';
     C = [A_est, B_est];
     Clist(:,:,k+1) = C;
     % print k iter and a,b,c values
-    fprintf('Iteration: %d, a: %f, b: %f\n', k, a, b);
+    fprintf('Iteration: %d, a: %f, b: %f\n', k, mean(a_array), mean(b_array));
 end
 %%
-% 
-% visualize_arm = 0;
-% figure(1); 
-% clist = zeros(length(tform2trvec(taskInit)),length(tlist)); 
-% clist(:,1) = tform2trvec(taskInit)';
-% for k = 2:Nsteps
-%     x = x_ref_list(1:7,k)';
-%     if visualize_arm
-%         pause(dt);
-%         show(robot,x,'PreservePlot',true,'Frames','off');
-%         axis([-0.7 0.7 -0.7 0.7 -0.1 1.5]);
-%     end
-%     clist(:,k) = tform2trvec(getTransform(robot,x,endEffector))';
-% end
-% show(robot,x,'PreservePlot',true,'Frames','off');
-% axis([-0.7 0.7 -0.7 0.7 -0.1 1.5]);
-% hold on;
-% plot3(clist(1,:),clist(2,:),clist(3,:),'k','LineWidth',2);
-% hold on;
+
+visualize_arm = 0;
+figure(1); 
+clist = zeros(length(tform2trvec(taskInit)),length(tlist)); 
+clist(:,1) = tform2trvec(taskInit)';
+c_hat_list = zeros(length(tform2trvec(taskInit)),length(tlist)); 
+c_hat_list(:,1) = tform2trvec(taskInit)';
+for k = 1:Nsteps+1
+    x = x_ref_list(1:7,k)';
+    x_hat = xlist(1:7,k)';
+    if visualize_arm
+        pause(dt);
+        show(robot,x,'PreservePlot',true,'Frames','off');
+        axis([-0.7 0.7 -0.7 0.7 -0.1 1.5]);
+    end
+    clist(:,k) = tform2trvec(getTransform(robot,x,endEffector))';
+    c_hat_list(:,k) = tform2trvec(getTransform(robot,x_hat,endEffector))';
+end
+show(robot,x,'PreservePlot',true,'Frames','off');
+axis([-0.7 0.7 -0.7 0.7 -0.1 1.5]);
+hold on;
+plot3(clist(1,:),clist(2,:),clist(3,:),'k','LineWidth',2);
+hold on;
+plot3(c_hat_list(1,:),c_hat_list(2,:),c_hat_list(3,:),'b','LineWidth',2);
+legend(["actual", "x_{hat}"]);
