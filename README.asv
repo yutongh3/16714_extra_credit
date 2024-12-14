@@ -30,4 +30,4 @@ Questions:
      This will control unreliable.
      V is the covariance of the gaussian white noise acting on the mesurement.
      With lager V or W, the system trajectory become more random and follows
-     the original LQR trajectory less accurate.
+     the original LQR trajectory less a
