@@ -1,4 +1,5 @@
 # 16714_extra_credit
+Same .m codes are in /scripts
 
 Video for code examples:
 
